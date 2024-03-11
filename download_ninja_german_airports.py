@@ -27,7 +27,7 @@ def fetch_data(URL, params):
         params (dict): The params to make the get request.
 
     Returns:
-        dict: The campaign data fetched from Iterable
+        dict: The fetched data
     """
     logging.info("Fetching data for german airports from the Ninja API ...")
     all_data = []
@@ -52,19 +52,12 @@ def push_to_gcs(data, gcp_project, interval_start_date):
     """Write data to Google Cloud Storage.
 
     Args:
-        data (dict): The campaign data to be written.
-        env (str): The Airflow environment identifier.
-        project (str): The Iterable project identifier.
+        data (dict): The data to be written.
         gcp_project (str): The GCP project identifier.
         logical_date (str): The logical date of the Airflow run.
 
     Returns:
         str: The filename of the written data.
-
-    Notes:
-        For more information on Airflow's logical date see \
-            [here](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/\
-                dag-run.html#data-interval)
     """
     bucket_name = BUCKET_NAME
     logging.info(f"Writing data to bucket: {bucket_name} ...")
@@ -95,7 +88,7 @@ def taskflow():
     @task(task_id="fetch_data_and_save")
     def fetch_data_and_save() -> None:
         """
-        Download the data from the API and save to local path
+        Download the data from the API and save to local path and GCP bucket
         """
         context = get_current_context()
         params = {"country": "DE"}
@@ -103,7 +96,7 @@ def taskflow():
 
         logging.info("Succesfully fetched data")
         # save to local
-        with open(f"german_airports{context['ds']}.json", "w") as json_file:
+        with open(f"german_airports_{context['ds']}.json", "w") as json_file:
             for item in all_data:
                 json.dump(item, json_file)
                 json_file.write("\n")
